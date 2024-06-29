@@ -76,7 +76,7 @@ class Config(MutableMapping[str, VTConfig]):
         if remaining_attributes:  # -> Config
             return cls(
                     dict_={'.'.join(remaining_attributes): value},
-                    )  # preforming dot separation for sections
+                    )  # performing dot separation for sections
         if isinstance(value, SectionProxy):  # -> Config
             return cls(dict_=value)
         elif isinstance(value, str) and isinstance(dict_, (ConfigParser, SectionProxy)):

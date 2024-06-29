@@ -138,5 +138,5 @@ __Q__: Why not types.SimpleNamesapce?\
 __A__: It can instantiate attributes and nothing else, that is not the case here. Class `collections.MutableMapping` provide more control/isolation when create complex custom dict's like bjects, which is focus to work with .ini configuration files and modify receiving values.
 
 
-## LICENCE
+## LICENSE
 > MIT
