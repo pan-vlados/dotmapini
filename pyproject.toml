@@ -1,0 +1,69 @@
+[build-system]
+requires = ["setuptools >= 61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "dotmapini"
+version = "1.0.0"
+authors = [
+  {name = "Vladislav Anisimov", email = "pan.vlados.w@gmail.com" },
+]
+description = "Package allow configuration and section's option values of .ini file to be called as attributes, where the section and option are separated by dot notation."
+readme = "README.md"
+license = {file = "LICENSE"}
+requires-python = ">= 3.8"
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+    "Topic :: Utilities"
+]
+
+[project.urls]
+repository = "https://github.com/pan-vlados/dotmapini"
+
+[tool.ruff]
+exclude = [
+    ".git",
+    ".vscode",
+    "__pypackages__",
+    "site-packages",
+    "venv",
+]
+respect-gitignore = false
+fix = false
+unsafe-fixes = false
+output-format = "full"
+line-length = 120
+indent-width = 4
+cache-dir = "/tmp/ruff-cache"
+
+[tool.ruff.lint.flake8-quotes]
+docstring-quotes = "double"
+inline-quotes = "single"
+
+[tool.ruff.format]
+docstring-code-format = true
+docstring-code-line-length = 80
+quote-style = "single"
+indent-style = "space"
+
+[tool.ruff.lint]
+select = ["ALL"]
+ignore = [
+  "D1", "D203", "D213", "FA102", "ANN101", "TRY003", "EM",
+  "ANN102",  # Missing type annotation for `cls` in classmethod
+  "UP",
+  "RET505",  # Unnecessary `elif` after `return` statement  # XXX: temporary
+  ]
+
+[tool.ruff.lint.isort]
+lines-after-imports = 2
+no-lines-before = ["future", "standard-library"]  # local-folder
+known-third-party = []
+known-local-folder = ["whole_app"]
+
+[tool.ruff.lint.extend-per-file-ignores]
+"__init__.py" = ["E402"]  # Ignore `E402` (import violations) in all `__init__.py` files
+"tests/*.py" = ["ANN401", "S101", "S311", "E402"]
