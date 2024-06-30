@@ -1,4 +1,5 @@
 from __future__ import annotations
+import ast
 from collections import deque
 from collections.abc import MutableMapping
 from configparser import ConfigParser, SectionProxy
@@ -10,7 +11,9 @@ from typing import (
     ItemsView,
     Iterator,
     KeysView,
+    List,
     Optional,
+    Set,
     Tuple,
     TypeAlias,
     TypeVar,
@@ -28,7 +31,7 @@ if TYPE_CHECKING:
 __all__ = ('Config', 'DigitInSectionNameError')
 
 
-VT = TypeVar('VT', str, bool, int, None)
+VT = TypeVar('VT', str, bool, int, float, bytes, Tuple, List, Dict, Set, None)
 _VT = TypeVar('_VT')
 VTConfig: TypeAlias = Union[VT, 'Config']
 
@@ -36,7 +39,7 @@ VTConfig: TypeAlias = Union[VT, 'Config']
 class Config(MutableMapping[str, VTConfig]):
     def __init__(
         self,
-        dict_: Union[ConfigParser, SectionProxy, Dict[str, Union[SectionProxy, str]]],
+        dict_: Union[ConfigParser, SectionProxy, Dict[str, SectionProxy], Dict[str, VTConfig]],
         ) -> None:
         for key, value in dict_.items():
             remaining_attributes: Deque[str] = deque(key.split(sep='.'))  # split section by dot
@@ -48,8 +51,8 @@ class Config(MutableMapping[str, VTConfig]):
                 remaining_attributes=remaining_attributes,
                 )
             if attribute.isdigit():
-                raise DigitInSectionNameError(f"Wrong attribute name <{attribute}> in {value}.\nInstance attribute should be string without digit. Only digits in section's names doesn't allowed.")
-            instance[attribute] = self.parse_value(
+                raise DigitInSectionNameError(f"Wrong attribute name <{attribute}> in {value!r}.\nInstance attribute should be string without digit. Only digits in section's names doesn't allowed.")
+            instance[attribute] = self._parse_value(
                 remaining_attributes=remaining_attributes,
                 key=key,
                 value=value,
@@ -57,35 +60,47 @@ class Config(MutableMapping[str, VTConfig]):
                 )
 
     @classmethod
-    def parse_value(
+    def _parse_value(
             cls,
             /,
             *,
             remaining_attributes: Deque[str],
             key: str,
-            value: Union[SectionProxy, str],
-            dict_: Union[ConfigParser, SectionProxy, Dict[str, Union[SectionProxy, str]]],
-            ) -> VTConfig:  # TODO: add ast.literal_eval try/except
-        """Config parsers do not guess datatypes of values in configuration files,
-        always storing them internally as strings. This means that if you need 
-        other datatypes, you should convert on your own.
-        See: https://docs.python.org/3/library/configparser.html#supported-datatypes
+            value: Union[SectionProxy, VTConfig],
+            dict_: Union[ConfigParser, SectionProxy, Dict[str, SectionProxy], Dict[str, VTConfig]],
+            ) -> VTConfig:
+        """Allow to convert datatypes on our own, as mentioned in configparser source docs:
+            Config parsers do not guess datatypes of values in configuration files,
+            always storing them internally as strings. This means that if you need
+            other datatypes, you should convert on your own.
+            See: https://docs.python.org/3/library/configparser.html#supported-datatypes
+        Additionally converts Python values properly presented in .ini options as corresponding
+        Python datatypes using ast.literal_eval. Keeps value as string if values NOT properly
+        presented in .ini.
 
-        Return parsed value types (other types not implemented):
-            VTConfig = Union[Config, str, bool, int, None]
+        Return parsed value datatypes:
+            VTConfig = Union[Config, str, bool, int, float, bytes, tuple, list, dict, set, None]
+
+        IMPORTANT! Be aware of: https://github.com/python/cpython/blob/99bc8589f09e66682a52df1f1a9598c7056d49dd/Lib/ast.py#L63
         """
         if remaining_attributes:  # -> Config
             return cls(
                     dict_={'.'.join(remaining_attributes): value},
                     )  # performing dot separation for sections
-        if isinstance(value, SectionProxy):  # -> Config
+        elif isinstance(value, SectionProxy):  # -> Config
             return cls(dict_=value)
-        elif isinstance(value, str) and isinstance(dict_, (ConfigParser, SectionProxy)):
-            if value.isdigit():  # -> int
-                return dict_.getint(key, value)
-            elif value.lower() in ('true', 'false'):  # -> bool
-                return dict_.getboolean(key, value)
-        return value  # -> str | None
+        elif isinstance(value, str):
+            if isinstance(dict_, (ConfigParser, SectionProxy)):
+                if value.isdigit():  # -> int
+                    return dict_.getint(key, value)
+                elif value.lower() in ('true', 'false'):  # -> bool
+                    return dict_.getboolean(key, value)
+            try:
+                return ast.literal_eval(value)  # -> see: https://github.com/python/cpython/blob/99bc8589f09e66682a52df1f1a9598c7056d49dd/Lib/ast.py#L56
+            except (ValueError, TypeError, SyntaxError, MemoryError, RecursionError):
+                # Suppress ast.literal_eval errors to maintain code runtime.
+                pass
+        return value  # -> Union[str, None, bool, Config]
 
     def _define_instance_and_attribute(
             self,
@@ -114,7 +129,7 @@ class Config(MutableMapping[str, VTConfig]):
     @classmethod
     def load(
         cls, path: Union[Path, str],
-        **kwargs: Any
+        **kwargs: Any,
         ) -> Config:
         """Load nested configuration in .ini file and parse it as MutableMapping.
         kwargs - any keyword arguments for configparser.ConfigParser.

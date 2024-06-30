@@ -13,12 +13,15 @@ Package allow configuration and section's option values of .ini file to be calle
 > The focus is to work with .ini configuration data using dot notation. Just call attributes and get their values in development flow while defining them in single place.
 - No more configuration values in `config['section']['option']` style, just `config.section.option`;
 - Can parse .ini files with dots between section names and convert them as several sections for corresponding values;
-- Parse values and convert them to Python data types;
+- Parse values and convert them to Python datatypes;
     ```python
-    # Return parsed value types:
-    Union[str, bool, int, None]  # other types not implemented and will be parsed as str
+    # Return parsed value datatypes:
+    Union[Config, str, bool, int, float, bytes, tuple, list, dict, set, None]
+    # Other types as well as Python types that aren't presented correctly in .ini
+    # not implemented and will be parsed as string.
     ```
 - Your config is instance of `collections.MutableMapping` (dict's like) and have the same features;
+- Support all keyword arguments for `configparser.ConfigParser` in `Config.load(path, **kwargs)` method;
 - Less keystroke;
 - No dependencies, only stdlib.
 
@@ -47,18 +50,25 @@ host = localhost
 database = test
 user = username
 password = password
+
+[complex.Python.datatypes]  ; Your complex Python datatype as is
+example = [{'key': ({'value', 'value2'}, [True, 1.2, 3])}]
 ```
 Minimal reproducible example:
 ```python
 from dotmapini import Config
 
 
-config = Config.load(path='/your/path/to/example.ini')
+config = Config.load(
+    path='/your/path/to/example.ini',
+    allow_no_value=True  # keyword for configparser.ConfigParser(...)
+    )
 print(config.APP.debug)  # => False type bool
 print(config.server.host)  # => '127.0.0.1' type str
 print(config.server.port)  # => 8080 type int
 print(config.server.db.database)  # => 'test' type str
 print(config.server.db.username)  # => 'username' type str
+print(config.complex.Python.datatypes.example)  # => [{'key': ({'value', 'value2'}, [True, 1.2, 3])}] type list
 ```
 Of course as always you can do this:
 ```python
@@ -69,7 +79,7 @@ But for what...
 
 ## IMPORTANT:
 
-- #### Uppercase strings for options will be parsed as lowercase.
+- <details><summary>Uppercase strings for options will be parsed as lowercase.</summary>
 
     Example:
     ```ini
@@ -81,21 +91,9 @@ But for what...
     config = Config.load(...)
     config.section.option  # not self.section.OPTION
     ```
+    </details>
 
-- #### Float numbers in options always will be parsed as a string.
-
-    Example:
-    ```ini
-    [section]
-    option = 1.5
-    ```
-    Will be:
-    ```python
-    config = Config.load(...)
-    config.section.option: str = '1.5'
-    ```
-
-- #### Only digits in section's name not allowed.
+- <details><summary>Only digits in section's name not allowed.</summary>
 
     Example:
     ```ini
@@ -110,8 +108,9 @@ But for what...
     ```python
     config = Config.load(...)  # will raise DigitInSectionNameError
     ```
+    </details>
 
-- #### If you have DEFAULT section it will be added to all other sections thus it can override same named option values.
+- <details><summary>If you have DEFAULT section it will be added to all other sections thus it can override same named option values.</summary>
 
     Example:
     ```ini
@@ -126,16 +125,19 @@ But for what...
     config = Config.load(...)
     config.section.option = value  # not value2
     ```
+    </details>
+
+- Be aware not to [memory overflow](https://github.com/python/cpython/blob/99bc8589f09e66682a52df1f1a9598c7056d49dd/Lib/ast.py#L63) while represent complex Python datatypes in .ini file.
 
 Most of this stuff is the default behavior of `configparser.ConfigParser`.
 
 
 ## Need to mention:
 
-__Q__: Why not dotmap?\
-__A__: I want to focus to work specifically with .ini/configparser. There is no need to me to create a lot of dict's like objects.\
-__Q__: Why not types.SimpleNamesapce?\
-__A__: It can instantiate attributes and nothing else, that is not the case here. Class `collections.MutableMapping` provide more control/isolation when create complex custom dict's like bjects, which is focus to work with .ini configuration files and modify receiving values.
+**Q**: Why not dotmap?\
+**A**: I want to focus to work specifically with .ini/configparser. There is no need to me to create a lot of dict's like objects.\
+**Q**: Why not types.SimpleNamesapce?\
+**A**: It can instantiate attributes and nothing else, that is not the case here. Class `collections.MutableMapping` provide more control/isolation when create complex custom dict's like bjects, which is focus to work with .ini configuration files and modify receiving values.
 
 
 ## LICENSE

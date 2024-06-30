@@ -104,9 +104,15 @@ class TestConfig(unittest.TestCase):
             ReturnData('True', True),
             ReturnData('123', 123),
             ReturnData('some string', 'some string'),
-            ReturnData('1.23', '1.23'),
+            ReturnData('1.23', 1.23),
             ReturnData(get_SextionProxy('section', 'false'), False),
             ReturnData(get_SextionProxy('section', '441'), 441),
+            ReturnData("[{'key': ({'value', 'value2'}, [True, 1.2, 3])}]", [{'key': ({'value', 'value2'}, [True, 1.2, 3])}]),
+            ReturnData(
+                "[{'Jhon': {'roles': ('PUBLIC', 'DEBUG')}, 'Peter': {'roles': None}}]",
+                [{'Jhon': {'roles': ('PUBLIC', 'DEBUG')}, 'Peter': {'roles': None}}]
+                )
+
         )
 
         for i, data in enumerate(test_data, start=1):
@@ -116,7 +122,7 @@ class TestConfig(unittest.TestCase):
             parser.read_dict(dictionary={section: {option: data.input}})
             with self.subTest(i):
                 self.assertEqual(
-                    Config.parse_value(
+                    Config._parse_value(
                         remaining_attributes=deque(),
                         key=option,
                         value=parser[section][option],
