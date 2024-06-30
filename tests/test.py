@@ -55,6 +55,14 @@ class TestConfig(unittest.TestCase):
     def test_load(self):
         config = Config.load(self.tmpfile.name)
 
+    def test_load_with_arguments(self):
+        config = Config.load(
+            path=self.tmpfile.name, 
+            allow_no_value=True, 
+            interpolation=configparser.BasicInterpolation()
+            )
+        configparser.ConfigParser()
+
     def test_loaded_consistent_data(self):
         self.assertEqual(self.config, Config.load(self.tmpfile.name))
 

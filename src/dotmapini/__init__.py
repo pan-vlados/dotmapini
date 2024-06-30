@@ -1,9 +1,10 @@
 from __future__ import annotations
 from collections import deque
 from collections.abc import MutableMapping
-from configparser import ConfigParser, Interpolation, SectionProxy
+from configparser import ConfigParser, SectionProxy
 from typing import (
     TYPE_CHECKING,
+    Any,
     Deque,
     Dict,
     ItemsView,
@@ -64,7 +65,7 @@ class Config(MutableMapping[str, VTConfig]):
             key: str,
             value: Union[SectionProxy, str],
             dict_: Union[ConfigParser, SectionProxy, Dict[str, Union[SectionProxy, str]]],
-            ) -> VTConfig:
+            ) -> VTConfig:  # TODO: add ast.literal_eval try/except
         """Config parsers do not guess datatypes of values in configuration files,
         always storing them internally as strings. This means that if you need 
         other datatypes, you should convert on your own.
@@ -84,7 +85,7 @@ class Config(MutableMapping[str, VTConfig]):
                 return dict_.getint(key, value)
             elif value.lower() in ('true', 'false'):  # -> bool
                 return dict_.getboolean(key, value)
-        return value  # -> str
+        return value  # -> str | None
 
     def _define_instance_and_attribute(
             self,
@@ -113,11 +114,12 @@ class Config(MutableMapping[str, VTConfig]):
     @classmethod
     def load(
         cls, path: Union[Path, str],
-        interpolation: Optional[Interpolation] = None,
+        **kwargs: Any
         ) -> Config:
         """Load nested configuration in .ini file and parse it as MutableMapping.
+        kwargs - any keyword arguments for configparser.ConfigParser.
         """
-        config = ConfigParser(allow_no_value=True, interpolation=interpolation)
+        config = ConfigParser(**kwargs)
         config.read(path)
         return cls(dict_=config)
 
