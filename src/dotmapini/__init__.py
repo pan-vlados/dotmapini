@@ -15,7 +15,6 @@ from typing import (
     Optional,
     Set,
     Tuple,
-    TypeAlias,
     TypeVar,
     Union,
     ValuesView,
@@ -33,7 +32,7 @@ __all__ = ('Config', 'DigitInSectionNameError')
 
 VT = TypeVar('VT', str, bool, int, float, bytes, Tuple, List, Dict, Set, None)
 _VT = TypeVar('_VT')
-VTConfig: TypeAlias = Union[VT, 'Config']
+VTConfig = Union[VT, 'Config']
 
 
 class Config(MutableMapping[str, VTConfig]):
