@@ -11,7 +11,7 @@ authors = [
 description = "Package allow configuration and section's option values of .ini file to be called as attributes, where the section and option are separated by dot notation."
 readme = "README.md"
 license = {file = "LICENSE"}
-requires-python = ">= 3.9"
+requires-python = ">= 3.8"
 classifiers = [
     "Programming Language :: Python :: 3",
     "License :: OSI Approved :: MIT License",

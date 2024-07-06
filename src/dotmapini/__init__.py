@@ -1,7 +1,7 @@
 from __future__ import annotations
 import ast
+import sys
 from collections import deque
-from collections.abc import MutableMapping
 from configparser import ConfigParser, SectionProxy
 from typing import (
     TYPE_CHECKING,
@@ -12,6 +12,7 @@ from typing import (
     Iterator,
     KeysView,
     List,
+    MutableMapping,
     Optional,
     Set,
     Tuple,
@@ -23,6 +24,8 @@ from typing import (
 from .exceptions import DigitInSectionNameError
 
 
+if sys.version_info >= (3, 9):
+    from collections.abc import MutableMapping
 if TYPE_CHECKING:
     from pathlib import Path
 
