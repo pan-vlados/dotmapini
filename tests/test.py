@@ -16,7 +16,7 @@ class TestConfig(unittest.TestCase):
         cls.path: Path = Path(__file__).absolute().parent
         cls.parser = configparser.ConfigParser()
         test_data: Dict[str, Dict[str, str]] = {  # TODO: random/mock
-            'APP': {'debug': 'False'}, 
+            'APP': {'DEBUG': 'False'}, 
             'DB': {'name': 'postgres'}, 
             'DB.settings': {'host': 'localhost', 'database': 'test', 'user': 'username', 'password': 'password'},
             'server': {'host': '127.0.0.1', 'port': '8080'},
@@ -130,7 +130,11 @@ class TestConfig(unittest.TestCase):
                     ),
                     data.output
                 )
-                
+
+    def test_options_always_lowercase(self):
+        config = Config.load(self.tmpfile.name)
+        self.assertRaises(KeyError, lambda: config.APP.DEBUG)
+
     @classmethod
     def tearDownClass(cls):
         Path(cls.tmpfile.name).unlink()

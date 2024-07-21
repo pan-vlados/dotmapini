@@ -137,7 +137,7 @@ Most of this stuff is the default behavior of `configparser.ConfigParser`.
 **Q**: Why not dotmap?\
 **A**: I want to focus to work specifically with .ini/configparser. There is no need to me to create a lot of dict's like objects.\
 **Q**: Why not types.SimpleNamesapce?\
-**A**: It can instantiate attributes and nothing else, that is not the case here. Class `collections.MutableMapping` provide more control/isolation when create complex custom dict's like bjects, which is focus to work with .ini configuration files and modify receiving values.
+**A**: It can instantiate attributes and nothing else, that is not the case here. Class `collections.MutableMapping` provide more control/isolation when create complex custom dict's like objects, which is focus to work with .ini configuration files and modify receiving values.
 
 
 ## LICENSE
