@@ -10,7 +10,7 @@ from src.dotmapini import Config, DigitInSectionNameError
 
 class TestConfig(unittest.TestCase):
     @classmethod
-    def setUpClass(cls):
+    def setUpClass(cls) -> None:
         cls.path: Path = Path(__file__).absolute().parent
         cls.parser = configparser.ConfigParser()
         test_data: Dict[str, Dict[str, str]] = {  # TODO: random/mock
@@ -40,7 +40,7 @@ class TestConfig(unittest.TestCase):
             cls.tmpfile.close()
             del cls.parser
 
-    def setUp(self):
+    def setUp(self) -> None:
         self.config = Config(  # TODO: random/mock
             {  # type: ignore
                 'DEFAULT': Config({'section': 'option'}),
@@ -82,34 +82,34 @@ class TestConfig(unittest.TestCase):
             },
         )
 
-    def test_load(self):
-        config = Config.load(self.tmpfile.name)
+    def test_load(self) -> None:
+        Config.load(self.tmpfile.name)
 
-    def test_load_with_arguments(self):
-        config = Config.load(
+    def test_load_with_arguments(self) -> None:
+        Config.load(
             path=self.tmpfile.name,
             allow_no_value=True,
             interpolation=configparser.BasicInterpolation(),
         )
         configparser.ConfigParser()
 
-    def test_loaded_consistent_data(self):
-        self.assertEqual(self.config, Config.load(self.tmpfile.name))
+    def test_loaded_consistent_data(self) -> None:
+        assert self.config == Config.load(self.tmpfile.name)
 
-    def test_delitem(self):
-        self.assertIn('APP', self.config)
+    def test_delitem(self) -> None:
+        assert 'APP' in self.config
         del self.config.APP
-        self.assertNotIn('APP', self.config)
+        assert 'APP' not in self.config
 
-    def test_getitem(self):
-        self.assertEqual('127.0.0.1', self.config.server.host)
+    def test_getitem(self) -> None:
+        assert self.config.server.host == '127.0.0.1'
 
-    def test_setitem(self):
+    def test_setitem(self) -> None:
         hello_world = 'hello world!'
         self.config.hello_world = hello_world
-        self.assertEqual(hello_world, self.config.hello_world)
+        assert hello_world == self.config.hello_world
 
-    def test_raises_digit_in_section_not_allowed(self):
+    def test_raises_digit_in_section_not_allowed(self) -> None:
         test_data = (  # TODO: random/mock
             {'incorrect.digit.1.attribute': {'option': 'value'}},
             {'2': {'option': 'value'}},
@@ -122,7 +122,7 @@ class TestConfig(unittest.TestCase):
                 praser.read_dict(test_dict)
                 self.assertRaises(DigitInSectionNameError, Config, praser)
 
-    def test_parse_value_return(self):
+    def test_parse_value_return(self) -> None:
         def get_SextionProxy(key, value) -> configparser.SectionProxy:
             parser = configparser.ConfigParser()
             parser.read_dict({'section': {key: value}})
@@ -161,20 +161,20 @@ class TestConfig(unittest.TestCase):
             option = f'test{i}'
             parser.read_dict(dictionary={section: {option: data.input}})
             with self.subTest(i):
-                self.assertEqual(
+                assert (
                     Config._parse_value(
                         remaining_attributes=deque(),
                         key=option,
                         value=parser[section][option],
                         dict_=parser[section],
-                    ),
-                    data.output,
+                    )
+                    == data.output
                 )
 
-    def test_options_always_lowercase(self):
+    def test_options_always_lowercase(self) -> None:
         config = Config.load(self.tmpfile.name)
         self.assertRaises(KeyError, lambda: config.APP.DEBUG)
 
     @classmethod
-    def tearDownClass(cls):
+    def tearDownClass(cls) -> None:
         Path(cls.tmpfile.name).unlink()

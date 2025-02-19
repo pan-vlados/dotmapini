@@ -24,16 +24,15 @@ from typing import (
 from .exceptions import DigitInSectionNameError
 
 
-if sys.version_info >= (3, 9):
-    from collections.abc import (
-        ItemsView,
-        Iterator,
-        KeysView,
-        MutableMapping,
-        ValuesView,
-    )
-
 if TYPE_CHECKING:
+    if sys.version_info >= (3, 9):
+        from collections.abc import (
+            ItemsView,
+            Iterator,
+            KeysView,
+            MutableMapping,
+            ValuesView,
+        )
     from pathlib import Path
 
 
@@ -48,15 +47,13 @@ VTConfig = Union[VT, 'Config']
 class Config(MutableMapping[str, VTConfig]):
     def __init__(
         self,
-        dict_: Union[
-            ConfigParser,
-            SectionProxy,
-            Dict[str, SectionProxy],
-            Dict[str, VTConfig],
-        ],
+        dict_: ConfigParser
+        | SectionProxy
+        | dict[str, SectionProxy]
+        | dict[str, VTConfig],
     ) -> None:
         for key, value in dict_.items():
-            remaining_attributes: Deque[str] = deque(
+            remaining_attributes: deque[str] = deque(
                 key.split(sep='.')
             )  # split section by dot
             attribute: str = (
@@ -84,15 +81,13 @@ class Config(MutableMapping[str, VTConfig]):
         cls,
         /,
         *,
-        remaining_attributes: Deque[str],
+        remaining_attributes: deque[str],
         key: str,
-        value: Union[SectionProxy, VTConfig],
-        dict_: Union[
-            ConfigParser,
-            SectionProxy,
-            Dict[str, SectionProxy],
-            Dict[str, VTConfig],
-        ],
+        value: SectionProxy | VTConfig,
+        dict_: ConfigParser
+        | SectionProxy
+        | dict[str, SectionProxy]
+        | dict[str, VTConfig],
     ) -> VTConfig:
         """Allow to convert datatypes on our own, as mentioned in configparser source docs:
             Config parsers do not guess datatypes of values in configuration files,
@@ -140,8 +135,8 @@ class Config(MutableMapping[str, VTConfig]):
         /,
         *,
         attribute: str,
-        remaining_attributes: Deque[str],
-    ) -> Tuple[Dict[str, VTConfig], str]:
+        remaining_attributes: deque[str],
+    ) -> tuple[dict[str, VTConfig], str]:
         """Define instance and attribute if both of them, splitted
         by dots, presented (except the last one) in class.
         Pop attributes from remaining_attributes.
@@ -162,7 +157,7 @@ class Config(MutableMapping[str, VTConfig]):
     @classmethod
     def load(
         cls,
-        path: Union[Path, str],
+        path: Path | str,
         **kwargs: Any,
     ) -> Config:
         """Load nested configuration in .ini file and parse it as MutableMapping.
@@ -209,8 +204,8 @@ class Config(MutableMapping[str, VTConfig]):
         return self.__dict__.values()
 
     def get(
-        self, key: str, default: Optional[_VT] = None
-    ) -> Optional[Union[VTConfig, _VT]]:
+        self, key: str, default: _VT | None = None
+    ) -> VTConfig | _VT | None:
         return self.__dict__.get(key, default)
 
     def __repr__(self) -> str:
