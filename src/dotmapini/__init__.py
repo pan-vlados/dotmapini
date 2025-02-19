@@ -25,7 +25,14 @@ from .exceptions import DigitInSectionNameError
 
 
 if sys.version_info >= (3, 9):
-    from collections.abc import MutableMapping
+    from collections.abc import (
+        ItemsView,
+        Iterator,
+        KeysView,
+        MutableMapping,
+        ValuesView,
+    )
+
 if TYPE_CHECKING:
     from pathlib import Path
 
@@ -41,36 +48,52 @@ VTConfig = Union[VT, 'Config']
 class Config(MutableMapping[str, VTConfig]):
     def __init__(
         self,
-        dict_: Union[ConfigParser, SectionProxy, Dict[str, SectionProxy], Dict[str, VTConfig]],
-        ) -> None:
+        dict_: Union[
+            ConfigParser,
+            SectionProxy,
+            Dict[str, SectionProxy],
+            Dict[str, VTConfig],
+        ],
+    ) -> None:
         for key, value in dict_.items():
-            remaining_attributes: Deque[str] = deque(key.split(sep='.'))  # split section by dot
-            attribute: str = remaining_attributes.popleft()  # get first attribute name in section
+            remaining_attributes: Deque[str] = deque(
+                key.split(sep='.')
+            )  # split section by dot
+            attribute: str = (
+                remaining_attributes.popleft()
+            )  # get first attribute name in section
             # Below <instance> is a self.__dict__ object, that we define to
             # manipulate with and not to overwrite existing Config attributes.
             instance, attribute = self._define_instance_and_attribute(
                 attribute=attribute,
                 remaining_attributes=remaining_attributes,
-                )
+            )
             if attribute.isdigit():
-                raise DigitInSectionNameError(f"Wrong attribute name <{attribute}> in {value!r}.\nInstance attribute should be string without digit. Only digits in section's names doesn't allowed.")
+                raise DigitInSectionNameError(
+                    f"Wrong attribute name <{attribute}> in {value!r}.\nInstance attribute should be string without digit. Only digits in section's names doesn't allowed."
+                )
             instance[attribute] = self._parse_value(
                 remaining_attributes=remaining_attributes,
                 key=key,
                 value=value,
                 dict_=dict_,
-                )
+            )
 
     @classmethod
     def _parse_value(
-            cls,
-            /,
-            *,
-            remaining_attributes: Deque[str],
-            key: str,
-            value: Union[SectionProxy, VTConfig],
-            dict_: Union[ConfigParser, SectionProxy, Dict[str, SectionProxy], Dict[str, VTConfig]],
-            ) -> VTConfig:
+        cls,
+        /,
+        *,
+        remaining_attributes: Deque[str],
+        key: str,
+        value: Union[SectionProxy, VTConfig],
+        dict_: Union[
+            ConfigParser,
+            SectionProxy,
+            Dict[str, SectionProxy],
+            Dict[str, VTConfig],
+        ],
+    ) -> VTConfig:
         """Allow to convert datatypes on our own, as mentioned in configparser source docs:
             Config parsers do not guess datatypes of values in configuration files,
             always storing them internally as strings. This means that if you need
@@ -87,30 +110,38 @@ class Config(MutableMapping[str, VTConfig]):
         """
         if remaining_attributes:  # -> Config
             return cls(
-                    dict_={'.'.join(remaining_attributes): value},
-                    )  # performing dot separation for sections
-        elif isinstance(value, SectionProxy):  # -> Config
+                dict_={'.'.join(remaining_attributes): value},
+            )  # performing dot separation for sections
+        if isinstance(value, SectionProxy):  # -> Config
             return cls(dict_=value)
-        elif isinstance(value, str):
+        if isinstance(value, str):
             if isinstance(dict_, (ConfigParser, SectionProxy)):
                 if value.isdigit():  # -> int
                     return dict_.getint(key, value)
-                elif value.lower() in ('true', 'false'):  # -> bool
+                if value.lower() in ('true', 'false'):  # -> bool
                     return dict_.getboolean(key, value)
             try:
-                return ast.literal_eval(value)  # -> see: https://github.com/python/cpython/blob/99bc8589f09e66682a52df1f1a9598c7056d49dd/Lib/ast.py#L56
-            except (ValueError, TypeError, SyntaxError, MemoryError, RecursionError):
+                return ast.literal_eval(
+                    value
+                )  # -> see: https://github.com/python/cpython/blob/99bc8589f09e66682a52df1f1a9598c7056d49dd/Lib/ast.py#L56
+            except (
+                ValueError,
+                TypeError,
+                SyntaxError,
+                MemoryError,
+                RecursionError,
+            ):
                 # Suppress ast.literal_eval errors to maintain code runtime.
                 pass
         return value  # -> Union[str, None, bool, Config]
 
     def _define_instance_and_attribute(
-            self,
-            /,
-            *,
-            attribute: str,
-            remaining_attributes: Deque[str],
-            ) -> Tuple[Dict[str, VTConfig], str]:
+        self,
+        /,
+        *,
+        attribute: str,
+        remaining_attributes: Deque[str],
+    ) -> Tuple[Dict[str, VTConfig], str]:
         """Define instance and attribute if both of them, splitted
         by dots, presented (except the last one) in class.
         Pop attributes from remaining_attributes.
@@ -120,19 +151,20 @@ class Config(MutableMapping[str, VTConfig]):
             if not isinstance(instance, Config):
                 raise TypeError(
                     f'Instance should be type of {self.__class__.__name__}, recieved {type(instance)}.',
-                    )
+                )
             attribute = remaining_attributes.popleft()
             return instance._define_instance_and_attribute(
                 attribute=attribute,
                 remaining_attributes=remaining_attributes,
-                )
+            )
         return self.__dict__, attribute
 
     @classmethod
     def load(
-        cls, path: Union[Path, str],
+        cls,
+        path: Union[Path, str],
         **kwargs: Any,
-        ) -> Config:
+    ) -> Config:
         """Load nested configuration in .ini file and parse it as MutableMapping.
         kwargs - any keyword arguments for configparser.ConfigParser.
         """
@@ -176,7 +208,9 @@ class Config(MutableMapping[str, VTConfig]):
     def values(self) -> ValuesView[VTConfig]:
         return self.__dict__.values()
 
-    def get(self, key: str, default: Optional[_VT] = None) -> Optional[Union[VTConfig, _VT]]:
+    def get(
+        self, key: str, default: Optional[_VT] = None
+    ) -> Optional[Union[VTConfig, _VT]]:
         return self.__dict__.get(key, default)
 
     def __repr__(self) -> str:

@@ -12,15 +12,13 @@ venv/bin/activate:
 	. ./venv/bin/activate
 	$(PIP) install --upgrade pip
 	$(PIP) install mypy ruff
-ifneq ("$(wildcard ./requirements.txt)", "")
-	$(PIP) install -r requirements.txt
-endif
 venv: venv/bin/activate
 	. ./venv/bin/activate
 test: venv tests
 	$(PYTHON) -m unittest -v tests/test*.py
-check: venv pyproject.toml src
+mypy-check: venv pyproject.toml src
 	$(PYTHON) -m mypy src/$(package)/*.py
+ruff-check: venv pyproject.toml src
 	$(PYTHON) -m ruff check src/$(package)/*.py
 build: venv pyproject.toml src
 	$(PIP) install build twine
@@ -42,7 +40,7 @@ publish: venv pyproject.toml src
 	$(PYTHON) -m twine upload dist/* --verbose
 	make clean
 clean:
-	rm -rf __pycache__
+	find . -name __pycache__ -exec rm -rf {} +
 	rm -rf src/$(package).egg-info
 	rm -rf dist
 clean_all:
